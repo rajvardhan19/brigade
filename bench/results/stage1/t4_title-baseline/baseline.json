@@ -1,0 +1,29 @@
+{
+ "type": "result",
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 4,
+ "duration_ms": 17814,
+ "duration_api_ms": 17736,
+ "total_cost_usd": 0.1690826,
+ "stop_reason": "end_turn",
+ "terminal_reason": "completed",
+ "result": "Creating or updating a note with a title over 200 characters now returns `400 {\"error\": \"title too long\"}`. All 18 tests pass, including the new one.\n\n- **Change (`app/notes.py`):** I added a `MAX_TITLE_LENGTH = 200` constant and a `_clean_title()` helper. It handles the existing \"title required\" check and the new length check, and both `create` and `update` use it.\n- **What counts toward the limit:** the title after leading and trailing spaces are trimmed, since that's what gets stored. A 200-character title with extra spaces around it is still accepted.\n- **Updates:** the check runs before anything is changed, so a rejected update leaves the note as it was.\n- **Test (`tests/test_notes.py`, `test_title_length_limit`):**\n  - A 200-character title is accepted.\n  - A 201-character title is rejected on create and on update, with the exact error response.\n  - After a rejected update, the note still has its old title.\n\nI didn't commit anything.",
+ "permission_denials": 0,
+ "modelUsage": {
+  "claude-haiku-5-5": {
+   "inputTokens": 1219,
+   "outputTokens": 15,
+   "cacheReadInputTokens": 0,
+   "cacheCreationInputTokens": 0,
+   "costUSD": 0.0001294
+  },
+  "claude-opus-5-5": {
+   "inputTokens": 8,
+   "outputTokens": 1750,
+   "cacheReadInputTokens": 115926,
+   "cacheCreationInputTokens": 13842,
+   "costUSD": 0.1689532
+  }
+ }
+}

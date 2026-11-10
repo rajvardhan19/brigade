@@ -1,0 +1,56 @@
+{
+ "task": "t6_ledger",
+ "arm": "baseline",
+ "rep": 1,
+ "stage": "stage3",
+ "when": "2026-11-09T20:32:22",
+ "cost_usd": 0.6453,
+ "session_wall_s": 146.2,
+ "pipeline_wall_s": 146.2,
+ "sessions": 1,
+ "turns": 5,
+ "visible_tests": {
+  "ok": true,
+  "ran": 48,
+  "failed": 0
+ },
+ "hidden_tests": {
+  "ok": true,
+  "ran": 32,
+  "failed": 0
+ },
+ "hidden_tail": "",
+ "any_session_error": false,
+ "plan": {},
+ "notes": [],
+ "session_log": [
+  {
+   "label": "baseline",
+   "model": "opus",
+   "effort": "medium",
+   "wall_s": 146.2,
+   "cost_usd": 0.6453,
+   "turns": 5,
+   "is_error": false,
+   "subtype": "success",
+   "permission_denials": 0,
+   "subagents_spawned": 0,
+   "model_usage": {
+    "claude-haiku-5-5": {
+     "inputTokens": 3002,
+     "outputTokens": 22,
+     "cacheReadInputTokens": 0,
+     "cacheCreationInputTokens": 0,
+     "costUSD": 0.00031120000000000003
+    },
+    "claude-opus-5-5": {
+     "inputTokens": 10,
+     "outputTokens": 19105,
+     "cacheReadInputTokens": 176507,
+     "cacheCreationInputTokens": 28444,
+     "costUSD": 0.6449934
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,29 @@
+{
+ "type": "result",
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 8,
+ "duration_ms": 38604,
+ "duration_api_ms": 38261,
+ "total_cost_usd": 0.1894283,
+ "stop_reason": "end_turn",
+ "terminal_reason": "completed",
+ "result": "All four defects are fixed. `python3 -m unittest discover -s tests` passes (74 tests).\n\nI also ran each failing command from your list by hand against a fresh database. Each printed `error: ...` to stderr, exited 1 and showed no traceback. Examples:\n- `budget set Food 2024-01 1e30` printed `error: invalid amount '1e30'`.\n- `rule add X --contains y --priority 99999999999999999999` printed `error: priority out of range: 99999999999999999999`.\n- Importing a row with `99999999999999999999999999999.00` printed `error: line 2: malformed amount '99999999999999999999999999999.00'`.\n\n`budget set Food 2024-01 250.000` still succeeds.\n\nBehaviour changes:\n- **`budget set`:** it now accepts only plain ASCII dollar forms. This means `1e3` is rejected too, as you asked, even though it is a small value.\n- **Importers:** amounts over 2**63 \u2212 1 cents, and `quantize` failures, now raise `ValueError(\"line N: malformed amount ...\")` during parsing. Nothing is written to the database in that case. Non-ASCII digits in amounts and dates are rejected the same way.\n- **`add_rule` and `set_budget`:** they raise `ValueError` for values outside the signed 64-bit range, and `cli.main` now also catches `OverflowError` as a backstop.\n\nTests are added in `test_importers.py`, `test_cli.py`, `test_rules.py` and `test_budgets.py`, covering each case you listed. I added a few extras: a zenith over-range amount, negative and signed `budget set` inputs, and a negative-priority lower bound.\n\nI recorded the decisions in `.brigade/context.md` and a short entry in `.brigade/progress.md`.",
+ "permission_denials": 0,
+ "modelUsage": {
+  "claude-haiku-5-5": {
+   "inputTokens": 2180,
+   "outputTokens": 20,
+   "cacheReadInputTokens": 0,
+   "cacheCreationInputTokens": 0,
+   "costUSD": 0.000228
+  },
+  "claude-sonnet-5-5": {
+   "inputTokens": 16,
+   "outputTokens": 5418,
+   "cacheReadInputTokens": 331123,
+   "cacheCreationInputTokens": 25469,
+   "costUSD": 0.18920030000000002
+  }
+ }
+}

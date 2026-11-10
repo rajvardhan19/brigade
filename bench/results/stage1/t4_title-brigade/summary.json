@@ -1,0 +1,52 @@
+{
+ "task": "t4_title",
+ "arm": "brigade",
+ "stage": "stage1",
+ "when": "2026-11-09T20:03:11",
+ "cost_usd": 0.1693,
+ "session_wall_s": 16.4,
+ "pipeline_wall_s": 16.4,
+ "sessions": 1,
+ "turns": 4,
+ "visible_tests": {
+  "ok": true,
+  "ran": 18,
+  "failed": 0
+ },
+ "hidden_tests": {
+  "ok": true,
+  "ran": 5,
+  "failed": 0
+ },
+ "hidden_tail": "",
+ "any_session_error": false,
+ "plan": {
+  "split": false
+ },
+ "notes": [
+  "skill chose NOT to split: the planning session did the work itself"
+ ],
+ "session_log": [
+  {
+   "label": "plan",
+   "model": "opus",
+   "effort": "medium",
+   "wall_s": 16.4,
+   "cost_usd": 0.1693,
+   "turns": 4,
+   "is_error": false,
+   "subtype": "success",
+   "permission_denials": 0,
+   "subagents_spawned": 0,
+   "model_usage": {
+    "claude-opus-5-5": {
+     "inputTokens": 8,
+     "outputTokens": 1579,
+     "cacheReadInputTokens": 120909,
+     "cacheCreationInputTokens": 14186,
+     "costUSD": 0.1692818
+    }
+   }
+  }
+ ]
+}

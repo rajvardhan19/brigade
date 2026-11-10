@@ -1,0 +1,122 @@
+diff --git a/README.md b/README.md
+index 2b8368a..56dd8b0 100644
+--- a/README.md
++++ b/README.md
+@@ -16,6 +16,7 @@ Standard library only; no dependencies.
+ |---|---|
+ | `app/api.py` | `App`: routes requests to the services, serializes responses |
+ | `app/auth.py` | register, login, logout, `require_user` |
++| `app/password_reset.py` | reset tokens: request (email) and confirm |
+ | `app/passwords.py` | password hashing and the password policy |
+ | `app/notes.py` | `NoteService`: create, update, delete, list, search (cached) |
+ | `app/store.py` | in-memory storage for users, notes and sessions |
+@@ -30,6 +31,8 @@ Standard library only; no dependencies.
+ | `POST /register` `{email, password}` | no | 201 `{id, email}` |
+ | `POST /login` `{email, password}` | no | 200 `{token}` |
+ | `POST /logout` | yes | 200 `{status: "ok"}` |
++| `POST /password-reset/request` `{email}` | no | 200 `{status: "ok"}` always; emails a token if the account exists |
++| `POST /password-reset/confirm` `{token, new_password}` | no | 200 `{status: "ok"}`; 400 `invalid token` / `weak password` |
+ | `GET /notes?limit=` | yes | 200 `{notes: [...]}`, newest first |
+ | `POST /notes` `{title, body, tags}` | yes | 201 note |
+ | `PATCH /notes/<id>` `{title?, body?, tags?}` | yes | 200 note |
+diff --git a/app/api.py b/app/api.py
+index 9d69d8f..f94884c 100644
+--- a/app/api.py
++++ b/app/api.py
+@@ -1,6 +1,6 @@
+ from urllib.parse import parse_qs, urlsplit
+ 
+-from app import auth
++from app import auth, clock, password_reset
+ from app.auth import AuthError
+ from app.mailer import Outbox
+ from app.notes import NoteError, NoteService
+@@ -41,6 +41,7 @@ def _parse_limit(query):
+ 
+ class App:
+     def __init__(self):
++        self.clock = clock
+         self.store = Store()
+         self.outbox = Outbox()
+         self.notes = NoteService(self.store)
+@@ -70,6 +71,18 @@ class App:
+             except AuthError:
+                 return 401, {"error": "invalid credentials"}
+ 
++        if method == "POST" and route == "/password-reset/request":
++            # Same response whether or not the account exists.
++            password_reset.request_reset(self.store, self.outbox, body.get("email"))
++            return 200, {"status": "ok"}
++
++        if method == "POST" and route == "/password-reset/confirm":
++            try:
++                password_reset.confirm_reset(self.store, body.get("token"), body.get("new_password"))
++            except password_reset.ResetError as e:
++                return 400, {"error": str(e)}
++            return 200, {"status": "ok"}
++
+         # Everything below needs a logged-in user.
+         try:
+             user = auth.require_user(self.store, token)
+diff --git a/app/models.py b/app/models.py
+index 9e84f2d..a8c7a48 100644
+--- a/app/models.py
++++ b/app/models.py
+@@ -26,3 +26,11 @@ class Session:
+     token: str
+     user_id: int
+     created_at: float
++
++
++@dataclass
++class ResetToken:
++    token_hash: str
++    user_id: int
++    created_at: float
++    expires_at: float
+diff --git a/app/store.py b/app/store.py
+index 84164f1..ef48a72 100644
+--- a/app/store.py
++++ b/app/store.py
+@@ -1,5 +1,5 @@
+ """In-memory storage. Each App has its own Store."""
+-from app.models import Note, Session, User
++from app.models import Note, ResetToken, Session, User
+ 
+ 
+ class Store:
+@@ -8,6 +8,7 @@ class Store:
+         self.users_by_email = {}   # lowercased email -> user id
+         self.notes = {}            # id -> Note
+         self.sessions = {}         # token -> Session
++        self.reset_tokens = {}     # sha256(token) -> ResetToken
+         self._next_user_id = 1
+         self._next_note_id = 1
+ 
+@@ -54,3 +55,22 @@ class Store:
+ 
+     def delete_session(self, token):
+         self.sessions.pop(token, None)
++
++    def delete_sessions_for_user(self, user_id):
++        for token in [t for t, s in self.sessions.items() if s.user_id == user_id]:
++            del self.sessions[token]
++
++    # password reset tokens (stored by hash only)
++
++    def add_reset_token(self, record: ResetToken):
++        self.reset_tokens[record.token_hash] = record
++
++    def get_reset_token(self, token_hash):
++        return self.reset_tokens.get(token_hash)
++
++    def delete_reset_token(self, token_hash):
++        self.reset_tokens.pop(token_hash, None)
++
++    def delete_reset_tokens_for_user(self, user_id):
++        for h in [h for h, r in self.reset_tokens.items() if r.user_id == user_id]:
++            del self.reset_tokens[h]
+
+# untracked files:
+app/password_reset.py
+tests/test_password_reset.py

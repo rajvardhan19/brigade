@@ -1,0 +1,29 @@
+{
+ "type": "result",
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 7,
+ "duration_ms": 40390,
+ "duration_api_ms": 40185,
+ "total_cost_usd": 0.16223970000000001,
+ "stop_reason": "end_turn",
+ "terminal_reason": "completed",
+ "result": "Piece 05 is done: `main(argv)` is implemented in `ledger/cli.py` and `python3 -m unittest discover -s tests` passes, 67 tests (53 prior, 14 new in `tests/test_cli.py`).\n\n`python3 -m ledger --db /nonexistent-dir/x.db report 2024-01` prints `error: unable to open database file` to stderr with no traceback, and exits 1.\n\nI only touched `ledger/cli.py`, `tests/test_cli.py`, and appended to `.brigade/context.md` and `.brigade/progress.md`. No signatures changed.\n\n- **Amount edge case:** `budget set` accepts `250.000` as 25000 cents, because the value is exact. `250.001`, `abc`, `-5`, `nan` and `inf` are all rejected. The prompt didn't cover trailing zeros, so I recorded this in the Decisions section.\n- **Warnings in test output:** the run prints `ResourceWarning: unclosed database` messages. They come from earlier pieces' tests, not the CLI, and I noted this in `progress.md`.",
+ "permission_denials": 0,
+ "modelUsage": {
+  "claude-haiku-5-5": {
+   "inputTokens": 1191,
+   "outputTokens": 21,
+   "cacheReadInputTokens": 0,
+   "cacheCreationInputTokens": 0,
+   "costUSD": 0.0001296
+  },
+  "claude-sonnet-5-5": {
+   "inputTokens": 12,
+   "outputTokens": 6159,
+   "cacheReadInputTokens": 202561,
+   "cacheCreationInputTokens": 20060,
+   "costUSD": 0.1621101
+  }
+ }
+}

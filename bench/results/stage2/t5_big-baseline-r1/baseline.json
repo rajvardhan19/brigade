@@ -1,0 +1,29 @@
+{
+ "type": "result",
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 7,
+ "duration_ms": 96281,
+ "duration_api_ms": 95048,
+ "total_cost_usd": 0.5192347,
+ "stop_reason": "end_turn",
+ "terminal_reason": "completed",
+ "result": "I added all four features, and the full suite passes: the 17 existing tests plus 23 new ones in `tests/test_features.py`. Nothing is committed yet.\n\n**1. Sharing**\n- Shares are stored per note, and two access checks were added: one for anyone who can read the note, one for anyone who can edit it.\n- The owner-only check now returns 403 for a user who has shared access and 404 for a user with none, as you specified.\n- Editor changes now show up in the owner's search right away. The old code cleared the search cache for whoever made the edit; it now clears the owner's.\n- `/notes/shared` is matched before the `/notes/<id>` routes.\n\n**2. Change history**\n- An entry is recorded only after an update succeeds, using `clock.now()` and the title after the change.\n- Deleting a note also deletes its history and its shares.\n\n**3. Markdown export**\n- Follows your format: the title heading, then the body and tags line only when they aren't empty.\n\n**4. Login rate limiting**\n- Attempts are counted per lowercased email as typed, not per account, so emails with no account are limited the same way.\n- The 15-minute lockout runs from the 5th failure and attempts during it don't extend it. After it ends the count starts again, and a successful login also resets it.\n\n**Things I changed or decided beyond the spec:**\n- **Fixed a search bug in the existing code.** Paging trimmed the cached search results in place, so after `GET /search?q=apple&limit=1`, a later search for `apple` without a limit returned only 1 result. Paging and search now return copies, and there's a test for it.\n- **Failed updates change nothing.** I now check the title before changing any fields, so a failed update can't partly change the note while recording no history entry.\n- **Unshare with an unknown email** returns 400 `{\"error\": \"unknown user\"}`, the same as share; the spec didn't say. Unsharing a registered user who has no access just returns 200.\n- **Order of share errors:** if a request has several problems, the permission is checked first, then whether the user exists, then whether it's yourself.\n\nI also added the new routes to the README.",
+ "permission_denials": 0,
+ "modelUsage": {
+  "claude-haiku-5-5": {
+   "inputTokens": 2185,
+   "outputTokens": 26,
+   "cacheReadInputTokens": 0,
+   "cacheCreationInputTokens": 0,
+   "costUSD": 0.0002315
+  },
+  "claude-opus-5-5": {
+   "inputTokens": 14,
+   "outputTokens": 12255,
+   "cacheReadInputTokens": 262356,
+   "cacheCreationInputTokens": 27672,
+   "costUSD": 0.5190032
+  }
+ }
+}

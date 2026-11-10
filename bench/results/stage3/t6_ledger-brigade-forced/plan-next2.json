@@ -1,0 +1,22 @@
+{
+ "type": "result",
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 7,
+ "duration_ms": 46680,
+ "duration_api_ms": 45809,
+ "total_cost_usd": 0.303633,
+ "stop_reason": "end_turn",
+ "terminal_reason": "completed",
+ "result": "Wave 2 is finished. Pieces 02 (importers), 03 (rules) and 04 (budgets) all report done, all 53 tests pass, and no interfaces changed, so `.brigade/context.md` didn't need updating. Wave 3 is the last one.\n\n| Wave | Piece | Model | Effort | Reason |\n|---|---|---|---|---|\n| 3 | 05 cli | sonnet | medium | It only connects functions that already exist, and the tests check the output format and the error cases. |\n| 3 | review-final | opus | medium | The code handles money, and the plan requires a review after the last wave. Run it after 05 is done. |\n\nThe prompt for 05 fixes the details a cheaper model might otherwise get wrong:\n- **Bad arguments:** when argparse rejects the arguments, `main` returns 2 instead of exiting.\n- **Errors:** it catches `ValueError`, `OSError`, `csv.Error` and `sqlite3.Error`. The importer passes missing-file and malformed-CSV errors through, so the CLI has to catch them.\n- **Dollar input:** `budget set` amounts are parsed with `Decimal`, and anything with more than two decimals or below zero is rejected.\n- **Negative amounts:** small negatives print correctly, e.g. `-0.50`.\n\nRun piece 05 first:\n\n    claude --model sonnet --effort medium \"Do brigade piece 05: follow .brigade/prompts/05-cli.md\"\n\nWhen it's done, run the final review:\n\n    claude --model opus --effort medium \"Do the brigade final review: follow .brigade/prompts/review-final.md\"\n\nIf the review ends with `VERDICT: DEFECTS`, run the fix prompt it gives you once, on the model it names.\n\nThe routing table in `.brigade/plan.md` now marks wave 2 done and lists both wave 3 steps.",
+ "permission_denials": 0,
+ "modelUsage": {
+  "claude-opus-5-5": {
+   "inputTokens": 14,
+   "outputTokens": 4219,
+   "cacheReadInputTokens": 272545,
+   "cacheCreationInputTokens": 20586,
+   "costUSD": 0.303633
+  }
+ }
+}

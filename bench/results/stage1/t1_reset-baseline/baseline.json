@@ -1,0 +1,29 @@
+{
+ "type": "result",
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 4,
+ "duration_ms": 49823,
+ "duration_api_ms": 49442,
+ "total_cost_usd": 0.31318189999999996,
+ "stop_reason": "end_turn",
+ "terminal_reason": "completed",
+ "result": "I've added password reset. All 32 tests pass: the 17 that were already there and 15 new ones. I haven't committed anything.\n\n**How it works**\n- **`/password-reset/request`** always returns 200 `{\"status\": \"ok\"}`. It also does this when the email is missing, isn't a string, or isn't registered, so the response never shows which emails have accounts. If the account exists, it sends a \"Password reset\" email with a `token: <token>` line, and emails are matched case-insensitively as elsewhere in the app.\n- **`/password-reset/confirm`** checks the token first, then the password policy (the same `validate_password` that registration uses):\n  - An unknown, used or expired token returns 400 `invalid token`. This holds even if the new password is also weak.\n  - A weak password returns 400 `weak password`, and the token stays usable.\n  - On success it sets the new password, deletes the user's reset tokens, and deletes all of that user's sessions, which logs them out everywhere.\n- **Tokens** are random 256-bit values, and only their SHA-256 hash is stored. They expire 30 minutes after they're issued. A new request deletes any earlier token for that user, but other users' tokens are unaffected.\n\n**Changes**\n- **New `app/password_reset.py`:** the request and confirm logic.\n- **`app/models.py`:** a `ResetToken` dataclass.\n- **`app/store.py`:** storage for reset tokens and a way to delete all of a user's sessions.\n- **`app/api.py`:** both routes, placed before the login check so they don't need a session. I also added `self.clock` to `App`, because the spec refers to `app.clock.now()` and that attribute didn't exist.\n- **`README.md`:** route and layout tables updated.\n- **New `tests/test_password_reset.py`:**\n  - The email is sent, matched case-insensitively, and nothing is sent for unknown or bad input.\n  - The raw token is never stored.\n  - A successful reset changes the password and ends every session for that user only.\n  - Tokens work once, unknown tokens are rejected, and a token stops working exactly at 30 minutes.\n  - A new request replaces the earlier token, and tokens are separate per user.\n  - A weak password leaves the token usable.\n\n**Existing bug I didn't fix:** in `app/api.py`, `_paginate` trims the result list in place, and `/search` passes it the list kept in the search cache. So `GET /search?q=x&limit=1` permanently shortens later results for the same query until that user's notes change. Passing a copy to `_paginate` would fix it.",
+ "permission_denials": 0,
+ "modelUsage": {
+  "claude-haiku-5-5": {
+   "inputTokens": 1516,
+   "outputTokens": 15,
+   "cacheReadInputTokens": 0,
+   "cacheCreationInputTokens": 0,
+   "costUSD": 0.0001591
+  },
+  "claude-opus-5-5": {
+   "inputTokens": 8,
+   "outputTokens": 6141,
+   "cacheReadInputTokens": 128374,
+   "cacheCreationInputTokens": 20562,
+   "costUSD": 0.3130228
+  }
+ }
+}

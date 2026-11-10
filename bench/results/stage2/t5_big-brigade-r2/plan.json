@@ -1,0 +1,22 @@
+{
+ "type": "result",
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 9,
+ "duration_ms": 110389,
+ "duration_api_ms": 108356,
+ "total_cost_usd": 0.60458,
+ "stop_reason": "end_turn",
+ "terminal_reason": "completed",
+ "result": "I did all four features in this session instead of splitting them into a plan. Sharing, history and export all need the same note-access checks in `app/notes.py` and `app/api.py`, so they couldn't be split by file. The login limiter is auth code that would have needed Opus anyway. So there's no `.brigade/plan.md`. All 41 tests pass: the 17 that were already there and 24 new ones. Nothing is committed yet.\n\n**What changed**\n- **Sharing** (`app/notes.py`, `app/api.py`, `app/store.py`): there's now one access check that decides whether a user is the owner, an editor, a viewer, or has no access. Owner-only actions return 403 to users with a share and 404 to users with none. When an editor changes a note, the owner's cached search results are cleared, so the change shows up in the owner's search right away.\n- **History:** a change is recorded only after the update succeeds. A rejected title or a view-only user's edit leaves no entry. Deleting a note also deletes its shares and history.\n- **Export:** follows your format exactly, including the `# Empty\\n` case.\n- **Rate limiting** (`app/auth.py`): failed attempts are counted per lowercased email, whether or not an account exists. During the 15 minutes after the 5th failure, every attempt gets 429 and doesn't extend the lockout. When it ends, the count starts again from zero.\n\n**An existing bug I fixed:** `?limit=` on `/search` was trimming the cached results themselves. After one limited search, every later search for the same text for that user came back short. Results are now copied before trimming, and there's a test for it.\n\n**Choices you didn't specify:**\n- Unsharing an email that has no account returns 400 `{\"error\": \"unknown user\"}`.\n- Unsharing a registered user the note was never shared with returns 200.\n- When a share request has several problems, the permission is checked first, then whether the user exists, then whether it's yourself.\n\nThe new tests are in `tests/test_sharing.py`, `tests/test_history_export.py` and `tests/test_rate_limit.py`, and the README lists the new routes.",
+ "permission_denials": 0,
+ "modelUsage": {
+  "claude-opus-5-5": {
+   "inputTokens": 18,
+   "outputTokens": 13754,
+   "cacheReadInputTokens": 359860,
+   "cacheCreationInputTokens": 32182,
+   "costUSD": 0.60458
+  }
+ }
+}

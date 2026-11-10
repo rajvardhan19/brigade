@@ -1,0 +1,29 @@
+{
+ "type": "result",
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 7,
+ "duration_ms": 100254,
+ "duration_api_ms": 98915,
+ "total_cost_usd": 0.5439091,
+ "stop_reason": "end_turn",
+ "terminal_reason": "completed",
+ "result": "I added all four features, and all 47 tests pass: the 17 that were already there and 30 new ones. Nothing is committed yet.\n\n**1. Sharing.** You can now share and unshare a note, open a single note (`GET /notes/<id>`), and list notes shared with you (`GET /notes/shared`). Every route that takes a note ID now uses one access check (in `app/notes.py`):\n- People with no access get 404 for everything.\n- Only the owner can delete, share or unshare; anyone else with access gets 403.\n- Editors can PATCH; viewers get 403.\n\nSearch results are cached per owner, so an editor's change has to clear the owner's cache rather than the editor's. Without that, the owner's search would show stale results.\n\n**2. Change history.** An entry is recorded when a note is created or successfully updated. Updates are checked before anything is changed, so a failed update leaves no history entry. Deleting a note also deletes its history and its shares.\n\n**3. Markdown export.** `GET /notes/<id>/export` returns the format you described. The owner and anyone the note is shared with can use it.\n\n**4. Login rate limiting.** Failed attempts are counted per lowercased email, whether or not the account exists. The 5th failure in a row starts a 15-minute lockout. During the lockout every attempt gets 429, without counting as a failure or extending the lockout. When it ends the count starts from zero, and a successful login also resets it.\n\n**Things you should know:**\n- **I fixed a bug that was already there.** `_paginate` trimmed the cached search list in place. So after `GET /search?q=apple&limit=1`, a later search for `apple` without a limit also returned only one result. It now returns a copy, and there's a test for it.\n- **One behaviour you didn't specify:** unsharing with an email that has no account returns 400 `{\"error\": \"unknown user\"}`, to match share. Unsharing a registered user who doesn't have access just returns 200.\n\nThe new tests are in `tests/test_sharing.py`, `tests/test_history_export.py` and `tests/test_rate_limit.py`. I also added the new routes to the route table in the README.",
+ "permission_denials": 0,
+ "modelUsage": {
+  "claude-haiku-5-5": {
+   "inputTokens": 2185,
+   "outputTokens": 26,
+   "cacheReadInputTokens": 0,
+   "cacheCreationInputTokens": 0,
+   "costUSD": 0.0002315
+  },
+  "claude-opus-5-5": {
+   "inputTokens": 14,
+   "outputTokens": 13136,
+   "cacheReadInputTokens": 262828,
+   "cacheCreationInputTokens": 28542,
+   "costUSD": 0.5436776000000001
+  }
+ }
+}

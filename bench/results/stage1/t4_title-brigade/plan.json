@@ -1,0 +1,22 @@
+{
+ "type": "result",
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 4,
+ "duration_ms": 15919,
+ "duration_api_ms": 15156,
+ "total_cost_usd": 0.1692818,
+ "stop_reason": "end_turn",
+ "terminal_reason": "completed",
+ "result": "I didn't split this into sessions or write a plan file. It was one small change to one service file plus one test, so I made it in this session. All 18 tests pass.\n\n**What changed in `app/notes.py`:**\n- **New check:** a `_clean_title` helper trims the title, then rejects it with 400 `{\"error\": \"title required\"}` if it's empty and 400 `{\"error\": \"title too long\"}` if it's over 200 characters. The limit is stored as `MAX_TITLE_LENGTH = 200`.\n- **Where it applies:** both creating a note and updating one now use this check.\n- **Length is measured after trimming spaces,** because the trimmed title is what gets saved. A 200-character title with extra spaces around it is accepted.\n- **A rejected update changes nothing.** The title is checked before any field is modified, so a PATCH that also sends a new body leaves the note exactly as it was.\n\n**New test in `tests/test_notes.py` (`test_title_length_limit`):**\n- Creating a note with a 201-character title gets the 400 error.\n- Exactly 200 characters is accepted.\n- An update with a 201-character title and a new body gets the 400 error, and the note's title and body stay the same.\n\nNothing is committed yet.",
+ "permission_denials": 0,
+ "modelUsage": {
+  "claude-opus-5-5": {
+   "inputTokens": 8,
+   "outputTokens": 1579,
+   "cacheReadInputTokens": 120909,
+   "cacheCreationInputTokens": 14186,
+   "costUSD": 0.1692818
+  }
+ }
+}

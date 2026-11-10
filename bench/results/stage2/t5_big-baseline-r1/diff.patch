@@ -1,0 +1,371 @@
+diff --git a/README.md b/README.md
+index 2b8368a..d196265 100644
+--- a/README.md
++++ b/README.md
+@@ -28,12 +28,18 @@ Standard library only; no dependencies.
+ | Method and path | Auth | Result |
+ |---|---|---|
+ | `POST /register` `{email, password}` | no | 201 `{id, email}` |
+-| `POST /login` `{email, password}` | no | 200 `{token}` |
++| `POST /login` `{email, password}` | no | 200 `{token}`; 429 after 5 straight failures for 15 min |
+ | `POST /logout` | yes | 200 `{status: "ok"}` |
+ | `GET /notes?limit=` | yes | 200 `{notes: [...]}`, newest first |
+ | `POST /notes` `{title, body, tags}` | yes | 201 note |
+-| `PATCH /notes/<id>` `{title?, body?, tags?}` | yes | 200 note |
+-| `DELETE /notes/<id>` | yes | 204 |
++| `GET /notes/<id>` | owner or shared | 200 note |
++| `PATCH /notes/<id>` `{title?, body?, tags?}` | owner or "edit" share | 200 note |
++| `DELETE /notes/<id>` | owner | 204 |
++| `POST /notes/<id>/share` `{email, permission}` | owner | 200 `{status: "ok"}` |
++| `POST /notes/<id>/unshare` `{email}` | owner | 200 `{status: "ok"}` |
++| `GET /notes/shared` | yes | 200 `{notes: [...]}` with `permission`, newest first |
++| `GET /notes/<id>/history` | owner or shared | 200 `{history: [...]}`, oldest first |
++| `GET /notes/<id>/export` | owner or shared | 200 `{markdown}` |
+ | `GET /search?q=&limit=` | yes | 200 `{notes: [...]}` |
+ 
+ Errors come back as `{"error": "<message>"}`.
+diff --git a/app/api.py b/app/api.py
+index 9d69d8f..8f4a5de 100644
+--- a/app/api.py
++++ b/app/api.py
+@@ -1,7 +1,7 @@
+ from urllib.parse import parse_qs, urlsplit
+ 
+ from app import auth
+-from app.auth import AuthError
++from app.auth import AuthError, TooManyAttempts
+ from app.mailer import Outbox
+ from app.notes import NoteError, NoteService
+ from app.store import Store
+@@ -21,9 +21,7 @@ def serialize_note(note):
+ 
+ def _paginate(items, limit):
+     """Trim a result list to at most `limit` items."""
+-    if limit is not None and len(items) > limit:
+-        del items[limit:]
+-    return items
++    return list(items) if limit is None else list(items[:limit])
+ 
+ 
+ def _parse_limit(query):
+@@ -67,6 +65,8 @@ class App:
+         if method == "POST" and route == "/login":
+             try:
+                 return 200, {"token": auth.login(self.store, body.get("email"), body.get("password"))}
++            except TooManyAttempts:
++                return 429, {"error": "too many attempts"}
+             except AuthError:
+                 return 401, {"error": "invalid credentials"}
+ 
+@@ -90,17 +90,39 @@ class App:
+                 note = self.notes.create(user, body.get("title"), body.get("body", ""), body.get("tags"))
+                 return 201, serialize_note(note)
+ 
++        if method == "GET" and route == "/notes/shared":
++            notes = [dict(serialize_note(n), permission=perm) for n, perm in self.notes.shared_with(user)]
++            return 200, {"notes": notes}
++
+         if route.startswith("/notes/"):
++            segments = route.split("/")[2:]
+             try:
+-                note_id = int(route.split("/")[2])
++                note_id = int(segments[0])
+             except ValueError:
+                 return 404, {"error": "not found"}
+-            if method == "PATCH":
+-                note = self.notes.update(user, note_id, body.get("title"), body.get("body"), body.get("tags"))
+-                return 200, serialize_note(note)
+-            if method == "DELETE":
+-                self.notes.delete(user, note_id)
+-                return 204, {}
++            action = segments[1] if len(segments) == 2 else None
++            if len(segments) > 2:
++                return 404, {"error": "not found"}
++
++            if action is None:
++                if method == "GET":
++                    return 200, serialize_note(self.notes.get(user, note_id))
++                if method == "PATCH":
++                    note = self.notes.update(user, note_id, body.get("title"), body.get("body"), body.get("tags"))
++                    return 200, serialize_note(note)
++                if method == "DELETE":
++                    self.notes.delete(user, note_id)
++                    return 204, {}
++            elif method == "POST" and action == "share":
++                self.notes.share(user, note_id, body.get("email"), body.get("permission"))
++                return 200, {"status": "ok"}
++            elif method == "POST" and action == "unshare":
++                self.notes.unshare(user, note_id, body.get("email"))
++                return 200, {"status": "ok"}
++            elif method == "GET" and action == "history":
++                return 200, {"history": self.notes.history(user, note_id)}
++            elif method == "GET" and action == "export":
++                return 200, {"markdown": self.notes.export_markdown(user, note_id)}
+ 
+         if method == "GET" and route == "/search":
+             notes = _paginate(self.notes.search(user, query.get("q", "")), _parse_limit(query))
+diff --git a/app/auth.py b/app/auth.py
+index f2955ef..eedb2c9 100644
+--- a/app/auth.py
++++ b/app/auth.py
+@@ -5,10 +5,18 @@ from app.models import Session
+ from app.passwords import hash_password, validate_password, verify_password
+ 
+ 
++MAX_FAILED_LOGINS = 5
++LOCKOUT_SECONDS = 15 * 60
++
++
+ class AuthError(Exception):
+     pass
+ 
+ 
++class TooManyAttempts(AuthError):
++    pass
++
++
+ def register(store, email, password):
+     if not email or "@" not in email:
+         raise AuthError("invalid email")
+@@ -22,9 +30,25 @@ def register(store, email, password):
+ 
+ 
+ def login(store, email, password) -> str:
+-    user = store.get_user_by_email(email or "")
+-    if user is None or not verify_password(password or "", user.password_hash, user.salt):
++    # Keyed by the email as given (not by account) so unregistered emails are
++    # limited exactly like registered ones and the limiter reveals nothing.
++    key = (email if isinstance(email, str) else "").lower()
++    attempts = store.login_attempts.setdefault(key, {"failures": 0, "locked_until": None})
++    now = clock.now()
++    if attempts["locked_until"] is not None:
++        if now < attempts["locked_until"]:
++            raise TooManyAttempts("too many attempts")
++        attempts["failures"] = 0
++        attempts["locked_until"] = None
++
++    user = store.get_user_by_email(key)
++    if user is None or not verify_password(password if isinstance(password, str) else "",
++                                           user.password_hash, user.salt):
++        attempts["failures"] += 1
++        if attempts["failures"] >= MAX_FAILED_LOGINS:
++            attempts["locked_until"] = now + LOCKOUT_SECONDS
+         raise AuthError("invalid credentials")
++    store.login_attempts.pop(key, None)
+     token = secrets.token_urlsafe(32)
+     store.add_session(Session(token, user.id, clock.now()))
+     return token
+diff --git a/app/notes.py b/app/notes.py
+index 5777331..2e84efd 100644
+--- a/app/notes.py
++++ b/app/notes.py
+@@ -8,10 +8,17 @@ class NoteError(Exception):
+         self.message = message
+ 
+ 
++PERMISSIONS = ("view", "edit")
++
++
+ def _clean_tags(tags):
+     return [str(t).strip().lower() for t in (tags or []) if str(t).strip()]
+ 
+ 
++def _newest_first(notes):
++    return sorted(notes, key=lambda n: (n.created_at, n.id), reverse=True)
++
++
+ class NoteService:
+     def __init__(self, store):
+         self.store = store
+@@ -21,44 +28,79 @@ class NoteService:
+         for key in [k for k in self._search_cache if k[0] == owner_id]:
+             del self._search_cache[key]
+ 
++    # access checks
++
+     def _owned(self, user, note_id):
++        """The note if the user owns it. 403 if they only have shared access, 404 if none."""
++        note = self._readable(user, note_id)
++        if note.owner_id != user.id:
++            raise NoteError(403, "forbidden")
++        return note
++
++    def _readable(self, user, note_id):
++        """The note if the user owns it or it is shared with them, else 404."""
+         note = self.store.get_note(note_id)
+-        if note is None or note.owner_id != user.id:
++        if note is None:
+             raise NoteError(404, "note not found")
++        if note.owner_id != user.id and self.store.get_permission(note_id, user.id) is None:
++            raise NoteError(404, "note not found")
++        return note
++
++    def _editable(self, user, note_id):
++        note = self._readable(user, note_id)
++        if note.owner_id != user.id and self.store.get_permission(note_id, user.id) != "edit":
++            raise NoteError(403, "forbidden")
+         return note
+ 
++    def _record(self, user, note, action):
++        self.store.add_history(note.id, {
++            "action": action,
++            "by": user.email,
++            "at": clock.now(),
++            "title": note.title,
++        })
++
++    # CRUD
++
+     def create(self, user, title, body="", tags=None):
+         if not title or not str(title).strip():
+             raise NoteError(400, "title required")
+         note = self.store.add_note(user.id, str(title).strip(), body or "", _clean_tags(tags), clock.now())
++        self._record(user, note, "created")
+         self._invalidate(user.id)
+         return note
+ 
++    def get(self, user, note_id):
++        return self._readable(user, note_id)
++
+     def update(self, user, note_id, title=None, body=None, tags=None):
+-        note = self._owned(user, note_id)
++        note = self._editable(user, note_id)
++        # Validate everything before changing anything, so a failed update leaves no trace.
++        if title is not None and not str(title).strip():
++            raise NoteError(400, "title required")
+         if title is not None:
+-            if not str(title).strip():
+-                raise NoteError(400, "title required")
+             note.title = str(title).strip()
+         if body is not None:
+             note.body = body
+         if tags is not None:
+             note.tags = _clean_tags(tags)
+         note.updated_at = clock.now()
+-        self._invalidate(user.id)
++        self._record(user, note, "updated")
++        # The owner's search results are what's cached, not the editor's.
++        self._invalidate(note.owner_id)
+         return note
+ 
+     def delete(self, user, note_id):
+-        self._owned(user, note_id)
++        note = self._owned(user, note_id)
+         self.store.delete_note(note_id)
+-        self._invalidate(user.id)
++        self._invalidate(note.owner_id)
+ 
+     def list(self, user):
+-        """The user's notes, newest first."""
+-        return sorted(self.store.notes_for_owner(user.id), key=lambda n: (n.created_at, n.id), reverse=True)
++        """The user's own notes, newest first."""
++        return _newest_first(self.store.notes_for_owner(user.id))
+ 
+     def search(self, user, query):
+-        """Notes whose title, body or tags contain the query (case-insensitive)."""
++        """The user's own notes whose title, body or tags contain the query (case-insensitive)."""
+         key = (user.id, (query or "").strip().lower())
+         if key not in self._search_cache:
+             q = key[1]
+@@ -66,4 +108,46 @@ class NoteService:
+                 n for n in self.list(user)
+                 if q in n.title.lower() or q in n.body.lower() or q in n.tags
+             ]
+-        return self._search_cache[key]
++        # Hand out a copy so callers (e.g. pagination) can't corrupt the cache.
++        return list(self._search_cache[key])
++
++    # sharing
++
++    def share(self, user, note_id, email, permission):
++        note = self._owned(user, note_id)
++        if permission not in PERMISSIONS:
++            raise NoteError(400, "invalid permission")
++        target = self.store.get_user_by_email(email) if isinstance(email, str) else None
++        if target is None:
++            raise NoteError(400, "unknown user")
++        if target.id == user.id:
++            raise NoteError(400, "cannot share with yourself")
++        self.store.set_share(note.id, target.id, permission)
++
++    def unshare(self, user, note_id, email):
++        note = self._owned(user, note_id)
++        target = self.store.get_user_by_email(email) if isinstance(email, str) else None
++        if target is None:
++            raise NoteError(400, "unknown user")
++        self.store.remove_share(note.id, target.id)
++
++    def shared_with(self, user):
++        """(note, permission) pairs for notes others shared with the user, newest first."""
++        pairs = self.store.notes_shared_with(user.id)
++        order = {n.id: i for i, n in enumerate(_newest_first([n for n, _ in pairs]))}
++        return sorted(pairs, key=lambda pair: order[pair[0].id])
++
++    # history and export
++
++    def history(self, user, note_id):
++        note = self._readable(user, note_id)
++        return self.store.get_history(note.id)
++
++    def export_markdown(self, user, note_id):
++        note = self._readable(user, note_id)
++        parts = [f"# {note.title}"]
++        if note.body:
++            parts.append(note.body)
++        if note.tags:
++            parts.append("Tags: " + ", ".join(note.tags))
++        return "\n\n".join(parts) + "\n"
+diff --git a/app/store.py b/app/store.py
+index 84164f1..2736d7f 100644
+--- a/app/store.py
++++ b/app/store.py
+@@ -8,6 +8,9 @@ class Store:
+         self.users_by_email = {}   # lowercased email -> user id
+         self.notes = {}            # id -> Note
+         self.sessions = {}         # token -> Session
++        self.shares = {}           # note id -> {user id: "view" | "edit"}
++        self.history = {}          # note id -> list of history entry dicts
++        self.login_attempts = {}   # lowercased email -> {"failures": int, "locked_until": float | None}
+         self._next_user_id = 1
+         self._next_note_id = 1
+ 
+@@ -40,10 +43,36 @@ class Store:
+ 
+     def delete_note(self, note_id):
+         self.notes.pop(note_id, None)
++        self.shares.pop(note_id, None)
++        self.history.pop(note_id, None)
+ 
+     def notes_for_owner(self, owner_id):
+         return [n for n in self.notes.values() if n.owner_id == owner_id]
+ 
++    # sharing
++
++    def set_share(self, note_id, user_id, permission):
++        self.shares.setdefault(note_id, {})[user_id] = permission
++
++    def remove_share(self, note_id, user_id):
++        self.shares.get(note_id, {}).pop(user_id, None)
++
++    def get_permission(self, note_id, user_id):
++        return self.shares.get(note_id, {}).get(user_id)
++
++    def notes_shared_with(self, user_id):
++        """(note, permission) pairs for notes shared with the user."""
++        return [(self.notes[nid], perms[user_id]) for nid, perms in self.shares.items()
++                if user_id in perms and nid in self.notes]
++
++    # history
++
++    def add_history(self, note_id, entry):
++        self.history.setdefault(note_id, []).append(entry)
++
++    def get_history(self, note_id):
++        return [dict(e) for e in self.history.get(note_id, [])]
++
+     # sessions
+ 
+     def add_session(self, session: Session):
+
+# untracked files:
+tests/test_features.py

@@ -1,0 +1,29 @@
+{
+ "type": "result",
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 5,
+ "duration_ms": 53093,
+ "duration_api_ms": 52871,
+ "total_cost_usd": 0.3144667,
+ "stop_reason": "end_turn",
+ "terminal_reason": "completed",
+ "result": "Piece 01 is done. `python3 -m unittest discover -s tests` runs 9 tests and they pass, and all four stub modules import without errors.\n\n**What I built:**\n- **Package files:** `ledger/__init__.py` and `ledger/__main__.py`. The second calls `raise SystemExit(main(sys.argv[1:]))` from `ledger.cli`.\n- **`ledger/db.py` (complete):**\n  - `connect(path)` creates the three tables if they don't already exist. It works with `\":memory:\"` and with file paths, and reconnecting to the same file keeps the data.\n  - `list_transactions(conn, account=None)` returns dicts with exactly the keys id, account, date, description, amount and category. They are sorted by date, then id, and `category_source` is never included.\n- **Stubs:** `importers.py`, `rules.py`, `budgets.py` and `cli.py` have the exact signatures from `context.md`. Each function raises `NotImplementedError`, and each module's docstring quotes its part of the spec.\n- **`tests/test_db.py`:** covers table and column creation, keeping rows after reconnecting to a temp file, sorting (including two transactions on the same date), the account filter, `category` being None when unset, and the exact dict keys. It also checks the `priority` default, the budgets primary key, and that rows come back as tuples.\n\n**Two small schema additions:** I added a check that `category_source` is NULL, `'rule'` or `'manual'`, and an index on `(account, date)` so the importer can look up duplicates quickly. No columns or signatures changed. Both additions are recorded in `context.md` under \"Interfaces\".\n\n**For later pieces:** I added a Decisions section to `context.md` covering these points:\n- `row_factory` is left unset, so queries return tuples.\n- The default transaction behaviour is unchanged, so the importer can use commit and rollback to make an import all-or-nothing.\n- Anything that needs `category_source` has to query the table directly.\n\nI appended the piece's report to `.brigade/progress.md`.\n\nUntil piece 05 replaces the CLI stub, `python3 -m ledger` will fail with `NotImplementedError`. Nothing is committed yet.",
+ "permission_denials": 0,
+ "modelUsage": {
+  "claude-haiku-5-5": {
+   "inputTokens": 1195,
+   "outputTokens": 24,
+   "cacheReadInputTokens": 0,
+   "cacheCreationInputTokens": 0,
+   "costUSD": 0.00013150000000000003
+  },
+  "claude-opus-5-5": {
+   "inputTokens": 10,
+   "outputTokens": 6821,
+   "cacheReadInputTokens": 161616,
+   "cacheCreationInputTokens": 18194,
+   "costUSD": 0.3143352
+  }
+ }
+}

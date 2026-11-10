@@ -1,0 +1,66 @@
+diff --git a/app/notes.py b/app/notes.py
+index 5777331..77e9105 100644
+--- a/app/notes.py
++++ b/app/notes.py
+@@ -8,6 +8,18 @@ class NoteError(Exception):
+         self.message = message
+ 
+ 
++MAX_TITLE_LENGTH = 200
++
++
++def _clean_title(title):
++    cleaned = str(title).strip() if title is not None else ""
++    if not cleaned:
++        raise NoteError(400, "title required")
++    if len(cleaned) > MAX_TITLE_LENGTH:
++        raise NoteError(400, "title too long")
++    return cleaned
++
++
+ def _clean_tags(tags):
+     return [str(t).strip().lower() for t in (tags or []) if str(t).strip()]
+ 
+@@ -28,18 +40,14 @@ class NoteService:
+         return note
+ 
+     def create(self, user, title, body="", tags=None):
+-        if not title or not str(title).strip():
+-            raise NoteError(400, "title required")
+-        note = self.store.add_note(user.id, str(title).strip(), body or "", _clean_tags(tags), clock.now())
++        note = self.store.add_note(user.id, _clean_title(title), body or "", _clean_tags(tags), clock.now())
+         self._invalidate(user.id)
+         return note
+ 
+     def update(self, user, note_id, title=None, body=None, tags=None):
+         note = self._owned(user, note_id)
+         if title is not None:
+-            if not str(title).strip():
+-                raise NoteError(400, "title required")
+-            note.title = str(title).strip()
++            note.title = _clean_title(title)
+         if body is not None:
+             note.body = body
+         if tags is not None:
+diff --git a/tests/test_notes.py b/tests/test_notes.py
+index cbab810..26e2ea1 100644
+--- a/tests/test_notes.py
++++ b/tests/test_notes.py
+@@ -33,6 +33,17 @@ class NotesTests(unittest.TestCase):
+         status, body = self.app.handle("POST", "/notes", {"title": "  "}, token=self.token)
+         self.assertEqual(status, 400)
+ 
++    def test_title_length_limit(self):
++        self.create("x" * 200)
++        status, body = self.app.handle("POST", "/notes", {"title": "x" * 201}, token=self.token)
++        self.assertEqual((status, body), (400, {"error": "title too long"}))
++
++        note = self.create("short")
++        status, body = self.app.handle("PATCH", f"/notes/{note['id']}", {"title": "x" * 201}, token=self.token)
++        self.assertEqual((status, body), (400, {"error": "title too long"}))
++        titles = [n["title"] for n in self.app.handle("GET", "/notes", token=self.token)[1]["notes"]]
++        self.assertIn("short", titles)
++
+     def test_update(self):
+         note = self.create("old", tags=["A"])
+         status, body = self.app.handle("PATCH", f"/notes/{note['id']}", {"title": "new", "tags": ["B"]}, token=self.token)

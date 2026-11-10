@@ -1,0 +1,29 @@
+{
+ "type": "result",
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 7,
+ "duration_ms": 29969,
+ "duration_api_ms": 30036,
+ "total_cost_usd": 0.1323271,
+ "stop_reason": "end_turn",
+ "terminal_reason": "completed",
+ "result": "Piece 04 is done. `set_budget` and `monthly_report` are implemented in `ledger/budgets.py` per the spec and the settled details, and `python3 -m unittest discover -s tests` passes with 53 tests, including the new budget tests.\n\n- **Conflicts:** The spec and the settled details didn't conflict. I made no schema or signature changes.\n- **Files:**\n  - Changed `ledger/budgets.py`.\n  - Added `tests/test_budgets.py`, covering every case the prompt listed.\n  - Appended a Decisions note to `.brigade/context.md` and a Piece 04 entry to `.brigade/progress.md`.\n- **For piece 05 (CLI):** Both functions raise `ValueError` on a bad month or amount. The CLI has to convert dollar amounts to integer cents before calling `set_budget`.\n\nI haven't committed anything.",
+ "permission_denials": 0,
+ "modelUsage": {
+  "claude-haiku-5-5": {
+   "inputTokens": 1192,
+   "outputTokens": 21,
+   "cacheReadInputTokens": 0,
+   "cacheCreationInputTokens": 0,
+   "costUSD": 0.0001297
+  },
+  "claude-sonnet-5-5": {
+   "inputTokens": 12,
+   "outputTokens": 4526,
+   "cacheReadInputTokens": 197494,
+   "cacheCreationInputTokens": 16791,
+   "costUSD": 0.13219740000000002
+  }
+ }
+}

@@ -1,0 +1,22 @@
+{
+ "type": "result",
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 9,
+ "duration_ms": 107246,
+ "duration_api_ms": 104893,
+ "total_cost_usd": 0.5843954000000001,
+ "stop_reason": "end_turn",
+ "terminal_reason": "completed",
+ "result": "I built all four features in this session instead of splitting the work. Sharing, history and export all edit the same two files (`app/notes.py`, `app/api.py`), and rate limiting is login code, which needs the strongest model anyway. With the whole codebase at about 500 lines, extra sessions would have added cost and nothing else, so there's no `.brigade/plan.md`.\n\nAll 43 tests pass with `python3 -m unittest discover -s tests`: the 17 that were already there and 26 new ones. Nothing is committed yet.\n\n**Where things are:**\n- **Sharing:** `app/notes.py` has one access check that returns owner, edit or view, and gives 404 to anyone without access. Edit, delete, share and unshare all go through it. Share records are kept in `app/store.py`, and deleting a note removes its shares and history.\n- **History:** a create or update is recorded only after it has fully succeeded, using the email of the user who made the change. Updates are now validated before anything changes, so a failed update records nothing and leaves the note as it was.\n- **Export:** `export_markdown` builds the title, body and tags parts and joins them with blank lines.\n- **Rate limiting:** `app/auth.py` counts failures per lowercased email, whether or not the account exists. A lockout returns 429 for 15 minutes; once it ends, the count starts again from zero.\n- **Routes:** `app/api.py` now handles `/notes/shared` first and reads the other note paths strictly, so an unknown path like `/notes/1/foo` now returns 404. Before, it was treated as `/notes/1`.\n\n**Two existing bugs I fixed, because the new features depend on them (both have tests):**\n1. Search results are cached per owner, but an edit only cleared the cache of the user who made it. An editor's change would never have shown up in the owner's search results. Edits now clear the owner's cache.\n2. `_paginate` cut the cached search list down in place, so `GET /search?q=x&limit=1` broke every later search for `x`. It now returns a copy.\n\n**Choices the spec left open:**\n- Unsharing a user who doesn't have access, or an email with no account, returns 200 and does nothing.\n- When a share request has several problems, they're checked in this order: owner, then permission, then unknown user, then sharing with yourself.\n\nThe README route table is updated to match.",
+ "permission_denials": 0,
+ "modelUsage": {
+  "claude-opus-5-5": {
+   "inputTokens": 18,
+   "outputTokens": 13561,
+   "cacheReadInputTokens": 348957,
+   "cacheCreationInputTokens": 30414,
+   "costUSD": 0.5843954000000001
+  }
+ }
+}

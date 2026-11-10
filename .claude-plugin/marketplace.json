@@ -1,0 +1,12 @@
+{
+  "name": "brigade",
+  "description": "Brigade: plan large jobs as fresh sessions with a model per piece",
+  "owner": { "name": "rajvardhan19" },
+  "plugins": [
+    {
+      "name": "brigade",
+      "source": "./plugins/brigade",
+      "description": "Plan a large job as a series of fresh Claude Code sessions, each with a self-contained prompt and a model chosen by risk."
+    }
+  ]
+}

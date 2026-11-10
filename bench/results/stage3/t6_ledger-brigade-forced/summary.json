@@ -1,0 +1,333 @@
+{
+ "task": "t6_ledger",
+ "arm": "brigade-forced",
+ "rep": 1,
+ "stage": "stage3",
+ "when": "2026-11-09T20:41:24",
+ "cost_usd": 2.6562,
+ "session_wall_s": 489.9,
+ "pipeline_wall_s": 490.3,
+ "sessions": 10,
+ "turns": 69,
+ "visible_tests": {
+  "ok": true,
+  "ran": 74,
+  "failed": 0
+ },
+ "hidden_tests": {
+  "ok": true,
+  "ran": 32,
+  "failed": 0
+ },
+ "hidden_tail": "",
+ "any_session_error": false,
+ "plan": {
+  "split": true,
+  "pieces": 5,
+  "routing": [
+   [
+    "01",
+    "01-skeleton-db.md",
+    "opus",
+    "medium"
+   ],
+   [
+    "02",
+    "02-importers.md",
+    "sonnet",
+    "medium"
+   ],
+   [
+    "03",
+    "03-rules.md",
+    "sonnet",
+    "medium"
+   ],
+   [
+    "04",
+    "04-budgets.md",
+    "sonnet",
+    "medium"
+   ],
+   [
+    "05",
+    "05-cli.md",
+    "sonnet",
+    "medium"
+   ]
+  ],
+  "reviews": [
+   [
+    "review-final.md",
+    "DEFECTS"
+   ]
+  ]
+ },
+ "notes": [],
+ "session_log": [
+  {
+   "label": "plan",
+   "model": "opus",
+   "effort": "medium",
+   "wall_s": 57.9,
+   "cost_usd": 0.3526,
+   "turns": 5,
+   "is_error": false,
+   "subtype": "success",
+   "permission_denials": 0,
+   "subagents_spawned": 0,
+   "model_usage": {
+    "claude-opus-5-5": {
+     "inputTokens": 10,
+     "outputTokens": 6928,
+     "cacheReadInputTokens": 172707,
+     "cacheCreationInputTokens": 22431,
+     "costUSD": 0.3525894
+    }
+   }
+  },
+  {
+   "label": "piece01-opus",
+   "model": "opus",
+   "effort": "medium",
+   "wall_s": 53.5,
+   "cost_usd": 0.3145,
+   "turns": 5,
+   "is_error": false,
+   "subtype": "success",
+   "permission_denials": 0,
+   "subagents_spawned": 0,
+   "model_usage": {
+    "claude-haiku-5-5": {
+     "inputTokens": 1195,
+     "outputTokens": 24,
+     "cacheReadInputTokens": 0,
+     "cacheCreationInputTokens": 0,
+     "costUSD": 0.00013150000000000003
+    },
+    "claude-opus-5-5": {
+     "inputTokens": 10,
+     "outputTokens": 6821,
+     "cacheReadInputTokens": 161616,
+     "cacheCreationInputTokens": 18194,
+     "costUSD": 0.3143352
+    }
+   },
+   "piece": "01"
+  },
+  {
+   "label": "plan-next1",
+   "model": "opus",
+   "effort": "medium",
+   "wall_s": 67.3,
+   "cost_usd": 0.3696,
+   "turns": 4,
+   "is_error": false,
+   "subtype": "success",
+   "permission_denials": 0,
+   "subagents_spawned": 0,
+   "model_usage": {
+    "claude-opus-5-5": {
+     "inputTokens": 8,
+     "outputTokens": 7246,
+     "cacheReadInputTokens": 134121,
+     "cacheCreationInputTokens": 24734,
+     "costUSD": 0.3696482
+    }
+   }
+  },
+  {
+   "label": "piece02-sonnet",
+   "model": "sonnet",
+   "effort": "medium",
+   "wall_s": 39.9,
+   "cost_usd": 0.1641,
+   "turns": 6,
+   "is_error": false,
+   "subtype": "success",
+   "permission_denials": 0,
+   "subagents_spawned": 0,
+   "model_usage": {
+    "claude-haiku-5-5": {
+     "inputTokens": 1191,
+     "outputTokens": 20,
+     "cacheReadInputTokens": 0,
+     "cacheCreationInputTokens": 0,
+     "costUSD": 0.00012910000000000002
+    },
+    "claude-sonnet-5-5": {
+     "inputTokens": 10,
+     "outputTokens": 6009,
+     "cacheReadInputTokens": 164885,
+     "cacheCreationInputTokens": 21832,
+     "costUSD": 0.16392649999999998
+    }
+   },
+   "piece": "02"
+  },
+  {
+   "label": "piece03-sonnet",
+   "model": "sonnet",
+   "effort": "medium",
+   "wall_s": 36.0,
+   "cost_usd": 0.1587,
+   "turns": 10,
+   "is_error": false,
+   "subtype": "success",
+   "permission_denials": 0,
+   "subagents_spawned": 0,
+   "model_usage": {
+    "claude-haiku-5-5": {
+     "inputTokens": 1191,
+     "outputTokens": 20,
+     "cacheReadInputTokens": 0,
+     "cacheCreationInputTokens": 0,
+     "costUSD": 0.00012910000000000002
+    },
+    "claude-sonnet-5-5": {
+     "inputTokens": 10,
+     "outputTokens": 5930,
+     "cacheReadInputTokens": 168425,
+     "cacheCreationInputTokens": 20608,
+     "costUSD": 0.1585945
+    }
+   },
+   "piece": "03"
+  },
+  {
+   "label": "piece04-sonnet",
+   "model": "sonnet",
+   "effort": "medium",
+   "wall_s": 30.7,
+   "cost_usd": 0.1323,
+   "turns": 7,
+   "is_error": false,
+   "subtype": "success",
+   "permission_denials": 0,
+   "subagents_spawned": 0,
+   "model_usage": {
+    "claude-haiku-5-5": {
+     "inputTokens": 1192,
+     "outputTokens": 21,
+     "cacheReadInputTokens": 0,
+     "cacheCreationInputTokens": 0,
+     "costUSD": 0.0001297
+    },
+    "claude-sonnet-5-5": {
+     "inputTokens": 12,
+     "outputTokens": 4526,
+     "cacheReadInputTokens": 197494,
+     "cacheCreationInputTokens": 16791,
+     "costUSD": 0.13219740000000002
+    }
+   },
+   "piece": "04"
+  },
+  {
+   "label": "plan-next2",
+   "model": "opus",
+   "effort": "medium",
+   "wall_s": 47.0,
+   "cost_usd": 0.3036,
+   "turns": 7,
+   "is_error": false,
+   "subtype": "success",
+   "permission_denials": 0,
+   "subagents_spawned": 0,
+   "model_usage": {
+    "claude-opus-5-5": {
+     "inputTokens": 14,
+     "outputTokens": 4219,
+     "cacheReadInputTokens": 272545,
+     "cacheCreationInputTokens": 20586,
+     "costUSD": 0.303633
+    }
+   }
+  },
+  {
+   "label": "piece05-sonnet",
+   "model": "sonnet",
+   "effort": "medium",
+   "wall_s": 40.7,
+   "cost_usd": 0.1622,
+   "turns": 7,
+   "is_error": false,
+   "subtype": "success",
+   "permission_denials": 0,
+   "subagents_spawned": 0,
+   "model_usage": {
+    "claude-haiku-5-5": {
+     "inputTokens": 1191,
+     "outputTokens": 21,
+     "cacheReadInputTokens": 0,
+     "cacheCreationInputTokens": 0,
+     "costUSD": 0.0001296
+    },
+    "claude-sonnet-5-5": {
+     "inputTokens": 12,
+     "outputTokens": 6159,
+     "cacheReadInputTokens": 202561,
+     "cacheCreationInputTokens": 20060,
+     "costUSD": 0.1621101
+    }
+   },
+   "piece": "05"
+  },
+  {
+   "label": "review-final",
+   "model": "opus",
+   "effort": "medium",
+   "wall_s": 77.9,
+   "cost_usd": 0.5092,
+   "turns": 10,
+   "is_error": false,
+   "subtype": "success",
+   "permission_denials": 0,
+   "subagents_spawned": 0,
+   "model_usage": {
+    "claude-haiku-5-5": {
+     "inputTokens": 1188,
+     "outputTokens": 15,
+     "cacheReadInputTokens": 0,
+     "cacheCreationInputTokens": 0,
+     "costUSD": 0.0001263
+    },
+    "claude-opus-5-5": {
+     "inputTokens": 18,
+     "outputTokens": 7642,
+     "cacheReadInputTokens": 378915,
+     "cacheCreationInputTokens": 35048,
+     "costUSD": 0.509079
+    }
+   }
+  },
+  {
+   "label": "fix-review-final-sonnet",
+   "model": "sonnet",
+   "effort": "medium",
+   "wall_s": 39.0,
+   "cost_usd": 0.1894,
+   "turns": 8,
+   "is_error": false,
+   "subtype": "success",
+   "permission_denials": 0,
+   "subagents_spawned": 0,
+   "model_usage": {
+    "claude-haiku-5-5": {
+     "inputTokens": 2180,
+     "outputTokens": 20,
+     "cacheReadInputTokens": 0,
+     "cacheCreationInputTokens": 0,
+     "costUSD": 0.000228
+    },
+    "claude-sonnet-5-5": {
+     "inputTokens": 16,
+     "outputTokens": 5418,
+     "cacheReadInputTokens": 331123,
+     "cacheCreationInputTokens": 25469,
+     "costUSD": 0.18920030000000002
+    }
+   }
+  }
+ ]
+}

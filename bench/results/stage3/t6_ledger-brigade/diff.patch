@@ -1,0 +1,24 @@
+diff --git a/.gitignore b/.gitignore
+index c18dd8d..1ce43cf 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1 +1,2 @@
+ __pycache__/
++*.db
+
+# untracked files:
+ledger/__init__.py
+ledger/__main__.py
+ledger/budgets.py
+ledger/cli.py
+ledger/db.py
+ledger/importers.py
+ledger/money.py
+ledger/rules.py
+tests/helpers.py
+tests/test_budgets.py
+tests/test_cli.py
+tests/test_db.py
+tests/test_importers.py
+tests/test_money.py
+tests/test_rules.py

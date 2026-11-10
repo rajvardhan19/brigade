@@ -1,0 +1,171 @@
+diff --git a/README.md b/README.md
+index 2b8368a..a577f38 100644
+--- a/README.md
++++ b/README.md
+@@ -29,6 +29,8 @@ Standard library only; no dependencies.
+ |---|---|---|
+ | `POST /register` `{email, password}` | no | 201 `{id, email}` |
+ | `POST /login` `{email, password}` | no | 200 `{token}` |
++| `POST /password-reset/request` `{email}` | no | 200 `{status: "ok"}` always; emails a token if the account exists |
++| `POST /password-reset/confirm` `{token, new_password}` | no | 200 `{status: "ok"}`; 400 `invalid token` / `weak password` |
+ | `POST /logout` | yes | 200 `{status: "ok"}` |
+ | `GET /notes?limit=` | yes | 200 `{notes: [...]}`, newest first |
+ | `POST /notes` `{title, body, tags}` | yes | 201 note |
+diff --git a/app/api.py b/app/api.py
+index 9d69d8f..6f85280 100644
+--- a/app/api.py
++++ b/app/api.py
+@@ -70,6 +70,17 @@ class App:
+             except AuthError:
+                 return 401, {"error": "invalid credentials"}
+ 
++        if method == "POST" and route == "/password-reset/request":
++            auth.request_password_reset(self.store, self.outbox, body.get("email"))
++            return 200, {"status": "ok"}
++
++        if method == "POST" and route == "/password-reset/confirm":
++            try:
++                auth.confirm_password_reset(self.store, body.get("token"), body.get("new_password"))
++            except AuthError as e:
++                return 400, {"error": str(e)}
++            return 200, {"status": "ok"}
++
+         # Everything below needs a logged-in user.
+         try:
+             user = auth.require_user(self.store, token)
+diff --git a/app/auth.py b/app/auth.py
+index f2955ef..26a9cf8 100644
+--- a/app/auth.py
++++ b/app/auth.py
+@@ -1,7 +1,8 @@
++import hashlib
+ import secrets
+ 
+ from app import clock
+-from app.models import Session
++from app.models import ResetToken, Session
+ from app.passwords import hash_password, validate_password, verify_password
+ 
+ 
+@@ -9,6 +10,13 @@ class AuthError(Exception):
+     pass
+ 
+ 
++RESET_TOKEN_TTL = 30 * 60  # seconds
++
++
++def _hash_reset_token(token):
++    return hashlib.sha256(token.encode()).hexdigest()
++
++
+ def register(store, email, password):
+     if not email or "@" not in email:
+         raise AuthError("invalid email")
+@@ -42,3 +50,38 @@ def require_user(store, token):
+     if user is None:
+         raise AuthError("not logged in")
+     return user
++
++
++def request_password_reset(store, outbox, email):
++    """Email a reset token if the account exists. Silent either way."""
++    user = store.get_user_by_email(email)
++    if user is None:
++        return
++    store.invalidate_reset_tokens_for_user(user.id)
++    token = secrets.token_urlsafe(32)
++    now = clock.now()
++    store.add_reset_token(ResetToken(_hash_reset_token(token), user.id, now, now + RESET_TOKEN_TTL))
++    outbox.send(
++        user.email,
++        "Password reset",
++        f"Someone asked to reset the password for this account.\n"
++        f"If it was you, use this token within 30 minutes:\n"
++        f"token: {token}\n",
++    )
++
++
++def confirm_password_reset(store, token, new_password):
++    """Set a new password using a reset token. Raises AuthError("invalid token" | "weak password")."""
++    if not isinstance(token, str) or not token:
++        raise AuthError("invalid token")
++    reset = store.get_reset_token(_hash_reset_token(token))
++    if reset is None or reset.used or clock.now() >= reset.expires_at:
++        raise AuthError("invalid token")
++    user = store.get_user(reset.user_id)
++    if user is None:
++        raise AuthError("invalid token")
++    if validate_password(new_password):
++        raise AuthError("weak password")
++    user.password_hash, user.salt = hash_password(new_password)
++    store.invalidate_reset_tokens_for_user(user.id)
++    store.delete_sessions_for_user(user.id)
+diff --git a/app/models.py b/app/models.py
+index 9e84f2d..ebf9e13 100644
+--- a/app/models.py
++++ b/app/models.py
+@@ -26,3 +26,12 @@ class Session:
+     token: str
+     user_id: int
+     created_at: float
++
++
++@dataclass
++class ResetToken:
++    token_hash: str
++    user_id: int
++    created_at: float
++    expires_at: float
++    used: bool = False
+diff --git a/app/store.py b/app/store.py
+index 84164f1..1c24155 100644
+--- a/app/store.py
++++ b/app/store.py
+@@ -1,5 +1,5 @@
+ """In-memory storage. Each App has its own Store."""
+-from app.models import Note, Session, User
++from app.models import Note, ResetToken, Session, User
+ 
+ 
+ class Store:
+@@ -8,6 +8,7 @@ class Store:
+         self.users_by_email = {}   # lowercased email -> user id
+         self.notes = {}            # id -> Note
+         self.sessions = {}         # token -> Session
++        self.reset_tokens = {}     # sha256(token) hex -> ResetToken
+         self._next_user_id = 1
+         self._next_note_id = 1
+ 
+@@ -24,6 +25,8 @@ class Store:
+         return self.users.get(user_id)
+ 
+     def get_user_by_email(self, email):
++        if not isinstance(email, str):
++            return None
+         user_id = self.users_by_email.get(email.lower())
+         return self.users.get(user_id) if user_id is not None else None
+ 
+@@ -54,3 +57,20 @@ class Store:
+ 
+     def delete_session(self, token):
+         self.sessions.pop(token, None)
++
++    def delete_sessions_for_user(self, user_id):
++        for token in [t for t, s in self.sessions.items() if s.user_id == user_id]:
++            del self.sessions[token]
++
++    # password reset tokens
++
++    def add_reset_token(self, reset: ResetToken):
++        self.reset_tokens[reset.token_hash] = reset
++
++    def get_reset_token(self, token_hash):
++        return self.reset_tokens.get(token_hash)
++
++    def invalidate_reset_tokens_for_user(self, user_id):
++        for reset in self.reset_tokens.values():
++            if reset.user_id == user_id:
++                reset.used = True
+
+# untracked files:
+tests/test_password_reset.py
