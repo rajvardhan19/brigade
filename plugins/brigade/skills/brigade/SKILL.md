@@ -1,4 +1,5 @@
 ---
+name: brigade
 description: Plan a large project or a big multi-part change as a series of fresh Claude Code sessions. Each session gets a self-contained prompt and the cheapest model that is safe for its risk. Use when a job is too big for one session. Run it with "next" to write the next wave of prompts from the progress so far.
 argument-hint: "[project goal, or path to a spec file] | next"
 disable-model-invocation: true
@@ -74,7 +75,8 @@ exploring. For a greenfield project, the first piece builds the skeleton
   Keep a wave to four pieces or fewer.
 - **Write full prompts only for the next wave.** List later waves as one-line
   outlines. Prompts written before the code exists go stale, so later waves
-  get written by `/brigade:plan next` once the earlier ones are done.
+  get written by running this skill again with `next` once the earlier ones
+  are done: `/brigade next`, or `/brigade:brigade next` with the plugin install.
 
 ## 4. Pick a model and effort for each piece by risk
 

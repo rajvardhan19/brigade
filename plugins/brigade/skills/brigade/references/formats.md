@@ -37,7 +37,7 @@ Keep every file short. Each session pays to read them.
     | 1 | 01 skeleton | ... | opus | medium | defines interfaces every later piece uses |
     | 2 | 02 importer | ... | sonnet | medium | bounded, spec'd, tests catch mistakes |
 
-    Later waves (outline only; `/brigade:plan next` writes their prompts):
+    Later waves (outline only; `/brigade next` writes their prompts):
     - Wave 3: <one line each>
 
     ## How to run
@@ -50,11 +50,12 @@ Keep every file short. Each session pays to read them.
     - **If a piece's check fails** and its session can't fix it: rerun the same
       prompt in a new session one model up (haiku -> sonnet -> opus), and paste
       the failure output under the prompt. Never retry on the same model twice.
-      If opus fails, stop and run `/brigade:plan next` to re-plan.
+      If opus fails, stop and run `/brigade next` to re-plan.
     - **Review:** after any wave that had a high-damage piece, and always after
       the last wave, run that wave's review prompt in a new session on opus. If
       it says DEFECTS, run its fix prompt once.
-    - When a wave is done, run `/brigade:plan next` for the next one.
+    - When a wave is done, run `/brigade next` for the next one.
+      (Installed as a plugin, the command is `/brigade:brigade next`.)
 
 ## .brigade/prompts/NN-slug.md (one per piece)
 

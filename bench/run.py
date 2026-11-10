@@ -28,7 +28,7 @@ import time
 
 BENCH = pathlib.Path(__file__).resolve().parent
 ROOT = BENCH.parent
-SKILL = pathlib.Path(os.environ.get("BRIGADE_SKILL", ROOT / "plugins" / "brigade" / "skills" / "plan"))  # bench/skill-v0 = first draft
+SKILL = pathlib.Path(os.environ.get("BRIGADE_SKILL", ROOT / "plugins" / "brigade" / "skills" / "brigade"))  # bench/skill-v0 = first draft
 SCRATCH = pathlib.Path(os.environ.get("BENCH_SCRATCH", "/tmp/brigade-bench"))
 CLAUDE = os.environ.get("CLAUDE_BIN") or shutil.which("claude") or "claude"
 

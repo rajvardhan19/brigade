@@ -1,8 +1,15 @@
 {
   "name": "brigade",
   "description": "Plan a large job as a series of fresh Claude Code sessions, each with a self-contained prompt and a model chosen by risk.",
-  "version": "0.1.0",
-  "author": { "name": "rajvardhan19" },
+  "version": "0.2.0",
+  "author": {
+    "name": "rajvardhan19"
+  },
   "license": "MIT",
-  "keywords": ["planning", "model-selection", "large-projects", "handoff"]
+  "keywords": [
+    "planning",
+    "model-selection",
+    "large-projects",
+    "handoff"
+  ]
 }

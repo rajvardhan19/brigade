@@ -252,8 +252,7 @@ def scene_arch(c, t, dur):
         el = ease((t - ARCH_T["loop"] - 0.5) / 0.5)
         c.text((866, (py + ly) / 2 - 34), "next", 26, "demi", INK, el, "lm")
         c.text((866, (py + ly) / 2 + 4), "wave", 26, "demi", INK, el, "lm")
-        c.text((866, (py + ly) / 2 + 42), "/brigade:plan", 17, "mono", INK2, el, "lm")
-        c.text((866, (py + ly) / 2 + 66), "next", 17, "mono", INK2, el, "lm")
+        c.text((866, (py + ly) / 2 + 42), "/brigade next", 17, "mono", INK2, el, "lm")
 
     down_arrow(c, "progress", "review", t, ARCH_T["review"] - 0.45)
     node(c, "review", "Fresh-context review", "A session that never saw the code. Verdict + fix prompt.",

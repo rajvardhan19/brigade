@@ -29,7 +29,7 @@ flowchart TD
     S1 --> L["Progress log<br/>.brigade/progress.md"]
     S2 --> L
     S3 --> L
-    L --> N["/brigade:plan next"]
+    L --> N["/brigade next"]
     N --> Q
     L --> R["Fresh Opus review<br/>VERDICT plus fix prompt"]
     RP --> R
@@ -59,7 +59,7 @@ such as routers and config belong to exactly one piece.
 Pieces are grouped into waves by dependency. Wave 1 is usually the skeleton
 and the interfaces; later waves fill in modules behind them. Brigade writes
 full prompts only for the next wave. When a wave finishes,
-`/brigade:plan next` reads what was actually built and writes the next
+`/brigade next` reads what was actually built and writes the next
 wave's prompts from that. Prompts written before the code exists go stale.
 
 ### 4. Self-contained prompts that settle the details
@@ -161,17 +161,29 @@ The architecture held up in practice too:
 
 ## Install
 
-As a plugin (from inside Claude Code):
+**VS Code, one click:** paste this link into your browser. Add the marketplace
+when asked, choose **Install for you**, and restart Claude when prompted.
 
-    /plugin marketplace add rajvardhan19/brigade
-    /plugin install brigade@brigade
+    vscode://anthropic.claude-code/install-plugin?plugin=brigade&marketplace=rajvardhan19/brigade
 
-Then run `/brigade:plan <your goal, or a path to a spec file>`. To split a
-job that one session could do, add "Plan this as separate sessions" to the
-goal.
+**VS Code, by hand:** type `/plugins` in a Claude Code chat. In the
+**Marketplaces** tab, add `rajvardhan19/brigade`, then install **brigade** from
+the **Plugins** tab.
 
-Or as a personal skill: copy `plugins/brigade/skills/plan` to
-`~/.claude/skills/brigade`, and run `/brigade <goal>` and `/brigade next`.
+**Terminal:**
+
+    claude plugin marketplace add rajvardhan19/brigade
+    claude plugin install brigade@brigade
+
+**As a plain skill, without the plugin system:** copy
+`plugins/brigade/skills/brigade` to `~/.claude/skills/brigade`.
+
+**Command names.** This README writes the commands as `/brigade <goal>` and
+`/brigade next`, the plain-skill names. Installed as a plugin, they carry the
+plugin's prefix: `/brigade:brigade <goal>` and `/brigade:brigade next`.
+
+To split a job that one session could do, add "Plan this as separate sessions"
+to the goal.
 
 ## Running the pieces
 
@@ -180,7 +192,7 @@ To start a piece, use a terminal:
     claude --model sonnet --effort medium "Do brigade piece 02: follow .brigade/prompts/02-importers.md"
 
 Or, in VS Code or the desktop app, open a new chat, pick the model, and send
-the same sentence. When a wave is done, run `/brigade:plan next`. Run the
+the same sentence. When a wave is done, run `/brigade next`. Run the
 review prompt in a new chat on Opus. If it says DEFECTS, run its fix prompt
 once.
 

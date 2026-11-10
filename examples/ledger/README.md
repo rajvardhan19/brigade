@@ -3,7 +3,8 @@
 These are the unedited files Brigade wrote while building `ledger`, a
 personal-finance toolkit (SQLite storage, two bank CSV importers, a
 categorization rules engine, budgets and reports, and a CLI). This run
-was asked to split. The project brief is [`bench/tasks/t6_ledger.md`](../../bench/tasks/t6_ledger.md).
+was asked to split. These files come from an earlier version, so they mention
+the old command `/brigade:plan next`; it is now `/brigade next`. The project brief is [`bench/tasks/t6_ledger.md`](../../bench/tasks/t6_ledger.md).
 
 | File | What it is |
 |---|---|
