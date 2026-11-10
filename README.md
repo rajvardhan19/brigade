@@ -147,7 +147,7 @@ The architecture held up in practice too:
   changed an interface.
 - **It knows when not to split.** On every job one session could handle, up
   to that five-module build, Brigade said so and did the work itself. It
-  did this in 7 of 7 runs.
+  did this in 5 of 5 runs.
 
 ## When to use it
 
