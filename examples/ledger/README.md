@@ -14,6 +14,7 @@ was asked to split. The project brief is [`bench/tasks/t6_ledger.md`](../../benc
 | [review-final-output.md](review-final-output.md) | The fresh-context review: five spec violations found, then a ready-to-run fix prompt |
 
 Result: 10 sessions, 4 of 5 build pieces on Sonnet with no escalations, and
-all 32 hidden tests passing. The review's five defects were fixed. It cost
-4.1x a single session, because one session could have built this. See the
-main README for the full numbers.
+all 32 hidden tests passing. The review found five spec violations that a
+normal single session also shipped, and the fix session closed all five.
+This job could have been done in one session; Brigade split it because it
+was asked to.
